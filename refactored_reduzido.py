@@ -8,8 +8,16 @@ import copy
 import itertools
 from PIL import Image, ImageDraw
 import sys, math
+from keras.models import load_model  # TensorFlow is required for Keras to work
+from PIL import Image, ImageOps  # Install pillow instead of PIL
+import numpy as np
 
 arq_name = 0
+
+model = load_model("keras_Model.h5", compile=False)
+
+# Load the labels
+class_names = open("labels.txt", "r").readlines()
 
 def draw_point_history(image, rectangle_history):
     for index, point in enumerate(list(rectangle_history)[0:-1:3]):
@@ -79,10 +87,12 @@ def main():
 
                 landmark_list = calc_landmark_list(debug_frame, hand_landmarks)
 
-                pre_processed_landmark_list = landmark_list#pre_process_landmark(landmark_list)
-                pre_processed_point_history_list = pre_process_point_history(debug_frame, history)
+                pre_processed_landmark_list = landmark_list
 
-                logging_csv(pre_processed_landmark_list, brect)
+                prediction = make_prediction(pre_processed_landmark_list, brect)
+
+                cv.putText(debug_frame, prediction, (brect[0] + 5, brect[1] - 4),
+               cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2, cv.LINE_AA)
 
         else:
             history.append([0, 0, 0, 0])
@@ -242,8 +252,7 @@ def get_hand_proportion(landmark_list):
 
     return hand_proportion_base if hand_proportion_base > hand_proportion_side else hand_proportion_side
 
-def logging_csv(landmark_list, brect):
-    global arq_name
+def make_prediction(landmark_list, brect):
     image = Image.open("imagem.jpg")
 
     draw = ImageDraw.Draw(image)
@@ -255,9 +264,32 @@ def logging_csv(landmark_list, brect):
     for point in new_landmark_list:
         draw.ellipse(((point[0] - 2), (point[1] - 2), (point[0] + 2), (point[1] + 2)), fill=(255, 0, 0))
     
-    image.save(f"images/{arq_name}.jpg")
+    #image.save(f"mao.jpg")
 
-    #arq_name += 1
+    data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
+
+    # resizing the image to be at least 224x224 and then cropping from the center
+    size = (224, 224)
+    image = image.convert("RGB")
+    image = ImageOps.fit(image, size, Image.Resampling.LANCZOS)
+
+
+    # turn the image into a numpy array
+    image_array = np.asarray(image)
+
+    # Normalize the image
+    normalized_image_array = (image_array.astype(np.float32) / 127.5) - 1
+
+    # Load the image into the array
+    data[0] = normalized_image_array
+
+    # Predicts the model
+    prediction = model.predict(data)
+    index = np.argmax(prediction)
+    class_name = class_names[index]
+
+    # Print prediction and confidence score
+    return class_name[2:-1]
 
 if __name__ == '__main__':
     main()
