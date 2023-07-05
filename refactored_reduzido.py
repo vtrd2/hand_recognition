@@ -36,14 +36,14 @@ def draw_point_history(image, rectangle_history):
 
 
 def main():
-    cap_width = 960
-    cap_height = 540
+    cap_width = 1920
+    cap_height = 1080
     history_length = 16
 
     mp_hands = mp.solutions.hands
     hands = mp_hands.Hands(
         static_image_mode=False,
-        max_num_hands=2,
+        max_num_hands=1,
         min_detection_confidence=0.7,
         min_tracking_confidence=0.5,
     )
@@ -55,6 +55,9 @@ def main():
     history = deque(maxlen=history_length)  # Initialize history with 16 points set to [0, 0, 0, 0]
 
     start_time = time.time()
+
+    cv.namedWindow("Hand Gesture Recognition", cv.WINDOW_NORMAL)
+    cv.setWindowProperty("Hand Gesture Recognition", cv.WND_PROP_AUTOSIZE, cv.WND_PROP_AUTOSIZE)
 
     while True:
         ret, frame = cap.read()
@@ -264,7 +267,7 @@ def make_prediction(landmark_list, brect):
     for point in new_landmark_list:
         draw.ellipse(((point[0] - 2), (point[1] - 2), (point[0] + 2), (point[1] + 2)), fill=(255, 0, 0))
     
-    #image.save(f"mao.jpg")
+    image.save(f"mao.jpg")
 
     data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
 
