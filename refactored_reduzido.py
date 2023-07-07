@@ -3,11 +3,10 @@ import mediapipe as mp
 from mediapipe.python.solutions.drawing_utils import draw_landmarks
 from collections import deque
 import time
-import csv
 import copy
 import itertools
 from PIL import Image, ImageDraw
-import sys, math
+import math
 from keras.models import load_model  # TensorFlow is required for Keras to work
 from PIL import Image, ImageOps  # Install pillow instead of PIL
 import numpy as np
